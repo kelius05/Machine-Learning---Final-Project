@@ -1,4 +1,3 @@
-import pytest
 import sys
 import os
 import numpy as np
@@ -6,9 +5,9 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 
-sys.path.append(os.path.abspath("../../"))  # adds repo root so Python can find the shared folder
+
+ssys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))) # adds repo root so Python can find the shared folder
 
 from shared.preprocessing.preprocess import prepare_data  # shared preprocessing — same as rest of group
 from shared.evaluation.metrics import evaluate_model      # shared evaluation
