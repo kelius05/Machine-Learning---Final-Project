@@ -1,3 +1,5 @@
+import sys
+import os
 import pandas as pd
 import numpy as np
 import time
@@ -6,31 +8,41 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 
-df = pd.read_csv("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv") #Load the data set
-encoder = LabelEncoder()  #converts text labels to numbers
-categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC','CAEC', 'SMOKE', 'SCC', 'CALC', 'MTRANS']  #all the text columns in the dataset that need converting
-for col in categorical_cols:
-    df[col] = encoder.fit_transform(df[col])  #Replaces text column in place with numbers |Female = 0, Male = 1
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
 
-target_encoder = LabelEncoder()  #Seperate encored for the target so we can decode numbers later
-df['NObeyesdad'] = target_encoder.fit_transform(df['NObeyesdad']) #encodes the 7 obesity categories into 0-6
+from shared.preprocessing.preprocess import prepare_data                            # shared preprocessing — same as rest of group
+from shared.evaluation.metrics import evaluate_model, print_evaluation_results      # shared evaluation — keeps results consistent
 
-print(df.head())
 
-X = df.drop(columns=['NObeyesdad'])  #all input features except the one we want to predict
-y = df['NObeyesdad']  #The target label we want to predict
+# ── load and prepare data using shared preprocessing ─────────────────────────
+file_path = "../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv"
 
-feature_names = X.columns.tolist() #save the column names  - important for visualization
+print("Loading and preprocessing data...")
+data = prepare_data(file_path)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)  #80% training, 20 testing, 
-#stratify keeps class proportions eqlai in both sets
-#print the amount of samples for each set
-print(f"Training samples: {X_train.shape[0]}")  
-print(f"Test samples: {X_test.shape[0]}")  
+# fix any columns not encoded due to pandas 3.0 StringDtype issue
+for col in data["X_train"].columns:
+    if not pd.api.types.is_numeric_dtype(data["X_train"][col]):
+        le = LabelEncoder()
+        data["X_train"][col] = le.fit_transform(data["X_train"][col].astype(str))
+        data["X_test"][col]  = le.transform(data["X_test"][col].astype(str))
+        data["X"][col]       = le.fit_transform(data["X"][col].astype(str))
 
-print("\n" + "="*45)
+# unpack AFTER the fix so these variables get the corrected values
+X_train        = data["X_train"]
+X_test         = data["X_test"]
+y_train        = data["y_train"]
+y_test         = data["y_test"]
+target_encoder = data["target_encoder"]
+X              = data["X"]
+
+feature_names = X.columns.tolist()
+
+print(f"Training samples: {X_train.shape[0]}")
+print(f"Test samples:     {X_test.shape[0]}")
+
 print("BASELINE: No depth limit")
 print("="*45)
 
@@ -73,7 +85,7 @@ plt.title("Decision tree: Train vs Test accuracy by max depth")
 plt.legend()
 plt.grid(axis='y', alpha=0.3)
 plt.tight_layout()
-plt.savefig("../../memeber2/results/depth_tuning.png", dpi=150) #saves the image into the results folder - dpi=150 makes it a higher quality
+plt.savefig("../../member2/results/depth_tuning.png", dpi=150) #saves the image into the results folder - dpi=150 makes it a higher quality
 print("Saved: depth_tuning.png")
 plt.show()
 
@@ -117,12 +129,11 @@ print("\n" + "="*45)
 print("EVALUATION")
 print("="*45)
 
-print(f"Train Accuracy:{accuracy_score(y_train, train_pred):.3f}") 
-print(f"Test Accuracy: {accuracy_score(y_test, test_pred):.3f}") #compare these 2 numbers, the smaller the gap, the better the generalization
+print("Train Accuracy:", round(accuracy_score(y_train, train_pred), 3))
+print("Test Accuracy: ", round(accuracy_score(y_test,  test_pred),  3))
 
-print("\nClassificaiton report:")
-print(classification_report(y_test, test_pred)) #shows precision
-
+results_eval = evaluate_model(classifier, X_test, y_test)  # calls the shared evaluation function
+print_evaluation_results(results_eval)                      # prints using the shared print function
 
 print("\n" + "="*45)
 print("FEATURE IMPORTANCE")
@@ -141,7 +152,7 @@ plt.barh(top_features[::-1], top_values[::-1], color='steelblue') #most importan
 plt.xlabel('Feature importance score')
 plt.title('Top Feature importances - Decision Tree')
 plt.tight_layout()
-plt.savefig("../../memeber2/results/feature_importance.png", dpi=150)
+plt.savefig("../../member2/results/feature_importance.png", dpi=150)
 print("\nSaved: feature_importance.png")
 plt.show()
 
@@ -158,7 +169,7 @@ plot_tree(
 )
 plt.title(f"Decision Tree visualization (top 3 levels shown, full depth={best_depth})")
 plt.tight_layout()
-plt.savefig("../../memeber2/results/tree_visualization.png", dpi=150)
+plt.savefig("../../member2/results/tree_visualization.png", dpi=150)
 print("Saved: tree_visualization.png")
 plt.show()
 
