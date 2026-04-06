@@ -17,7 +17,6 @@ def split_features_target(df, target_column="NObeyesdad"):
 def encode_features(X):
     X = X.copy()
     feature_encoders = {}
-
     for col in X.columns:
         if X[col].dtype == "object":
             encoder = LabelEncoder()
