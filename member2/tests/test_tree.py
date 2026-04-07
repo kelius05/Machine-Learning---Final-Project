@@ -6,8 +6,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
 
-ssys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))) # adds repo root so Python can find the shared folder
 
 from shared.preprocessing.preprocess import prepare_data  # shared preprocessing — same as rest of group
 from shared.evaluation.metrics import evaluate_model      # shared evaluation
@@ -56,28 +56,28 @@ def test_model_achieves_minimum_accuracy():
     assert acc >= 0.70, f"Accuracy is too low: {acc:.4f} (need at least 70%)"
 
 
-def test_feature_importances_sumto1():
+def test_feature_importances_sum_to_1():
     clf, X, X_train, X_test, y_train, y_test, target_encoder = get_data_and_model()
     
-    total = np.sum(clf.feature_importances_) #adds up all the importance values aross every feature
+    total = np.sum(clf.feature_importances_) #adds up all the importance values across every feature
 
     assert round(total, 2) == 1.0, f"Importances sum to {round(total, 2)}, expected to be 1" #Round to 2 decimals before comparing
 
 
 def test_prediction_output_shape():
-    #Model must prduce exactly one prediction per test sample
+    #Model must produce exactly one prediction per test sample
     clf, X, X_train, X_test, y_train, y_test, target_encoder = get_data_and_model()
 
     predictions = clf.predict(X_test) #ask the model to predict the labels for all test rows
 
-    #len() counts the items in a array - both counts much match
+    #len() counts the items in an array - both counts must match
     assert len(predictions) == len(y_test), (
         f"Expected {len(y_test)} predictions, got {len(predictions)}"
     )
 
 
 def test_predictions_on_new_people():
-    #model must return valid obsesity category names for the new people
+    #model must return valid obesity category names for the new people
     clf, X, X_train, X_test, y_train, y_test, target_encoder = get_data_and_model()
     
     valid_categories = set(target_encoder.classes_) #the 7 known obesity category names
@@ -102,4 +102,4 @@ def test_predictions_on_new_people():
         
 #Run directly without pytest
 #this only runs when we run "python test_tree.py" directly
-#when using pytest it is ignored - pytest finds and runs all the test functiions automatically
+#when using pytest it is ignored - pytest finds and runs all the test functions automatically
