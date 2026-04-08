@@ -2,6 +2,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 
 def evaluate_model(model, X_test, y_test):
+    """Evaluate any fitted estimator or Pipeline on the test set."""
     y_pred = model.predict(X_test)
 
     accuracy = accuracy_score(y_test, y_pred)
