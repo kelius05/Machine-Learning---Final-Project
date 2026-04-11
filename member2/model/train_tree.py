@@ -5,10 +5,11 @@ import numpy as np
 import time
 import tracemalloc
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
 
@@ -173,6 +174,96 @@ plt.title(f"Decision Tree visualization (top 3 levels shown, full depth={best_de
 plt.tight_layout()
 plt.savefig("../../member2/results/tree_visualization.png", dpi=150)
 print("Saved: tree_visualization.png")
+plt.show()
+
+print("\n" + "="*45)
+print("PIPELINE AND GRID SEARCH TUNING")
+print("="*45)
+
+#A pipeline chains steps together into an object so it all runs automatically in order
+#Here we wrap the decision tree into a pipeline as a signel step
+pipeline = Pipeline([
+    ('classifier', DecisionTreeClassifier(random_state=42)) #our model as a step in the pipeline
+])
+
+#now we define the parameter combinations we want Gridsearch to test
+#classifier__max_depth means the max_depth setting of th eclassifier step
+param_grid={
+    'classifier__max_depth': [7,8,9,10,None], #some of the best depths we tested manually
+    'classifier__criterion': ['gini', 'entropy'] #2 of the ways to measure impurity
+}
+
+#GridSearch tries every combination in param_grid
+#cv=5 means 5 fold cross validation- splits the data into 5 parts, trains on 4 and tests on 1, repeat it 5 times
+#more reliable than a single train/test split, scoring accuracy means we pick whatever combination is the best
+grid_search = GridSearchCV(
+    estimator=pipeline,
+    param_grid=param_grid,
+    cv=5,
+    scoring='accuracy',
+)
+
+
+
+grid_search.fit(X_train, y_train) #try every combination and find the best one
+
+print(f"Best parameters found: {grid_search.best_params_}") #prints whatever combination was the best
+print(f"Best cross-val accuracy: {grid_search.best_score_ :.4f}")
+
+
+# Evaluate the best model on the held out test set
+best_pipeline = grid_search.best_estimator_ # the best pipeline from gridsearch
+test_acc_pipeline = accuracy_score(best_pipeline.predict(X_test), y_test)  #Test on data its never seen
+print(f"Test accuracy: {test_acc_pipeline:.4f} ")
+
+# Manual vs Pipelin Comparison plot
+print("\nSaving manual vs pipeline comparison plot")
+
+# get the cross validation results for every combination
+cv_results = grid_search.cv_results_
+
+# pull out gini and entropy results separately so we can plot both
+gini_mask    = [p['classifier__criterion'] == 'gini'    for p in cv_results['params']]
+entropy_mask = [p['classifier__criterion'] == 'entropy' for p in cv_results['params']]
+
+gini_depths = [p['classifier__max_depth'] for p, m in zip(cv_results['params'], gini_mask) if m]
+entropy_depths =[p['classifier__max_depth'] for p, m in zip(cv_results['params'], entropy_mask)if m]
+
+gini_scores = [s for s, m in zip(cv_results['mean_test_score'], gini_mask) if m]
+entropy_scores = [s for s, m in zip(cv_results['mean_test_score'], entropy_mask) if m]
+
+# convert None to string "None" so it shows cleanly on x axis
+gini_labels    = [str(d) if d is not None else "None" for d in gini_depths]
+entropy_labels = [str(d) if d is not None else "None" for d in entropy_depths]
+
+# filter manual sweep to only show 7 depths and above, same as the pipeline range
+# this is so we can have the same starting point for everythig
+manual_start = depth_labels.index("7")  # find where depth 7 starts in our manual results
+manual_labels = depth_labels[manual_start:] # depth labels fro 7 and onwards
+manual_test = test_accs[manual_start:]
+
+plt.figure(figsize=(9,5))
+
+# blue dashed line is manual test accuracy
+# uses one train/test split, a specific 80/20 cut of the data
+plt.plot(manual_labels, manual_test, marker='o', linestyle='--', color='steelblue', label='Manual Sweep (Single Split)')
+
+# Orange solud line is grid search's cross validation accuracy using gini criterion
+# averages 5 different splits, it's more reliable than a single split (manual)
+plt.plot(gini_labels, gini_scores, marker='s', linestyle='-', color='darkorange', label='GridSearchCV - gini (5 fold cv)')
+
+# green solid line is grid search's cross validation accuracy using entropy criterion
+# entropy measures impurity differently than gini, sometimes it has better splits
+plt.plot(entropy_labels, entropy_scores, marker='^', linestyle='-', color='green', label='GridSearchCV - entropy (5-fold cv)')
+
+plt.xlabel("max_depth")
+plt.ylabel("Accuracy")
+plt.title("Manual Sweep vs GridSearchCV - Gini vs Entropy")
+plt.legend()
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.savefig("../../member2/results/pipeline_comparison.png", dpi=150)  # saves to results folder
+print("Saved: pipeline_comparison.png")
 plt.show()
 
 print("\nDone! all output is saved to member2/results/")
