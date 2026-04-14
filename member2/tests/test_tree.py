@@ -5,37 +5,36 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
-
+from sklearn.model_selection import train_test_split
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
 
 
-from shared.preprocessing.preprocess import prepare_data  # shared preprocessing — same as rest of group
 from shared.evaluation.metrics import evaluate_model      # shared evaluation
 
 def get_data_and_model():
-    data = prepare_data("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")  # load and preprocess using shared function
+    df = pd.read_csv("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")  # load the dataset
 
-    # this loop catches any columns that weren't encoded and fixes them
-    for col in data["X_train"].columns:
-        if not pd.api.types.is_numeric_dtype(data["X_train"][col]):  # if column is not a number, encode it
-            le = LabelEncoder()
-            data["X_train"][col] = le.fit_transform(data["X_train"][col].astype(str))
-            data["X_test"][col]  = le.transform(data["X_test"][col].astype(str))
-            data["X"][col]       = le.fit_transform(data["X"][col].astype(str))
+    encoder = LabelEncoder()  # LabelEncoder converts text columns to numbers so the model can use them
+    categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC',
+                        'CAEC', 'SMOKE', 'SCC', 'CALC', 'MTRANS']  # all the text columns that need converting
 
-    # unpack after the fix so all variables have the corrected encoded values
-    X_train        = data["X_train"]
-    X_test         = data["X_test"]
-    y_train        = data["y_train"]
-    y_test         = data["y_test"]
-    target_encoder = data["target_encoder"]
-    X              = data["X"]
+    for col in categorical_cols:
+        df[col] = encoder.fit_transform(df[col])  # replace each text column with numbers e.g. Female=0, Male=1
+
+    target_encoder = LabelEncoder()  # separate encoder for the target so we can decode predictions back to names later
+    df['NObeyesdad'] = target_encoder.fit_transform(df['NObeyesdad'])  # encode the 7 obesity categories to numbers 0-6
+
+    X = df.drop(columns=['NObeyesdad'])  # all input features except the one we want to predict
+    y = df['NObeyesdad']                  # the target label we want to predict
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y  # 80% training, 20% testing — same split as train_tree.py
+    )
 
     clf = DecisionTreeClassifier(max_depth=9, random_state=42)  # same model settings as train_tree.py
     clf.fit(X_train, y_train)  # train the model on training data
 
     return clf, X, X_train, X_test, y_train, y_test, target_encoder
-
 
 def test_train_accuracy_higher_than_test():
     #Train accuracy should always be at least as high as test accuracy
@@ -103,3 +102,25 @@ def test_predictions_on_new_people():
 #Run directly without pytest
 #this only runs when we run "python test_tree.py" directly
 #when using pytest it is ignored - pytest finds and runs all the test functions automatically
+if __name__ == "__main__":
+    tests = [
+        test_train_accuracy_higher_than_test,
+        test_model_achieves_minimum_accuracy,
+        test_feature_importances_sum_to_1,
+        test_prediction_output_shape,
+        test_predictions_on_new_people,
+    ]
+
+    passed = 0
+    failed = 0
+
+    for test in tests:
+        try:
+            test()
+            print(f"  PASSED: {test.__name__}")
+            passed += 1
+        except AssertionError as e:
+            print(f"  FAILED: {test.__name__} — {e}")
+            failed += 1
+
+    print(f"\n{passed} passed, {failed} failed")
