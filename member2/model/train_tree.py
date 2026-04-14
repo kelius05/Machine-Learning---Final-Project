@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
 
-from shared.preprocessing.preprocess import load_data                            # shared preprocessing — same as rest of group
+from shared.preprocessing.preprocess import prepare_data                            # shared preprocessing — same as rest of group
 from shared.evaluation.metrics import evaluate_model, print_evaluation_results      # shared evaluation — keeps results consistent
 
 
@@ -21,7 +21,7 @@ from shared.evaluation.metrics import evaluate_model, print_evaluation_results  
 file_path = "../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv"
 
 print("Loading and preprocessing data...")
-data = load_data(file_path)
+data = prepare_data(file_path)
 
 # fix any columns not encoded due to pandas 3.0 StringDtype issue
 # This loop catches anything still text and encodes it
