@@ -13,35 +13,29 @@ from sklearn.pipeline import Pipeline
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
 
-from shared.preprocessing.preprocess import prepare_data                            # shared preprocessing — same as rest of group
 from shared.evaluation.metrics import evaluate_model, print_evaluation_results      # shared evaluation — keeps results consistent
 
 
-# ── load and prepare data using shared preprocessing ─────────────────────────
-file_path = "../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv"
+df = pd.read_csv("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")  # load the dataset
 
-print("Loading and preprocessing data...")
-data = prepare_data(file_path)
+encoder = LabelEncoder()  # LabelEncoder converts text columns to numbers so the model can use them
+categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC',
+                    'CAEC', 'SMOKE', 'SCC', 'CALC', 'MTRANS']  # all the text columns that need converting
 
-# fix any columns not encoded due to pandas 3.0 StringDtype issue
-# This loop catches anything still text and encodes it
-for col in data["X_train"].columns: # if column is not a number, encode it
-    if not pd.api.types.is_numeric_dtype(data["X_train"][col]):
-        le = LabelEncoder()
-        data["X_train"][col] = le.fit_transform(data["X_train"][col].astype(str)) #learn mapping and apply it
-        data["X_test"][col]  = le.transform(data["X_test"][col].astype(str)) #apply same mapping - never relearn on test data
-        data["X"][col]       = le.fit_transform(data["X"][col].astype(str))
+for col in categorical_cols:
+    df[col] = encoder.fit_transform(df[col])  # replace each text column with numbers e.g. Female=0, Male=1
 
-# unpack AFTER the fix so these variables get the corrected values
-# it will still point to an unencoded version with text still in it
-X_train        = data["X_train"]
-X_test         = data["X_test"]
-y_train        = data["y_train"]
-y_test         = data["y_test"]
-target_encoder = data["target_encoder"] # Saved separately so we can decode predicted numbers back to names later
-X              = data["X"]
+target_encoder = LabelEncoder()  # separate encoder for the target so we can decode predictions back to names later
+df['NObeyesdad'] = target_encoder.fit_transform(df['NObeyesdad'])  # encode the 7 obesity categories to numbers 0-6
 
-feature_names = X.columns.tolist()
+X = df.drop(columns=['NObeyesdad'])  # all input features except the one we want to predict
+y = df['NObeyesdad']                  # the target label we want to predict
+
+feature_names = X.columns.tolist()  # save column names for visualization later
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y  # 80% training, 20% testing — stratify keeps class proportions equal
+)
 
 print(f"Training samples: {X_train.shape[0]}")
 print(f"Test samples:     {X_test.shape[0]}")
