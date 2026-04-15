@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
 from sklearn.pipeline import Pipeline
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))  # adds repo root to path so Python can find the shared folder
@@ -130,7 +130,16 @@ print("Train Accuracy:", round(accuracy_score(y_train, train_pred), 3))
 print("Test Accuracy: ", round(accuracy_score(y_test,  test_pred),  3))
 
 results_eval = evaluate_model(classifier, X_test, y_test)  # calls the shared evaluation function
-print_evaluation_results(results_eval)                      # prints using the shared print function
+print_evaluation_results(results_eval)           
+
+cm = results_eval["confusion_matrix"]  # grab the confusion matrix already calculated by evaluate_model
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=target_encoder.classes_)
+disp.plot(xticks_rotation=45)
+plt.title("Confusion Matrix - Decision Tree")
+plt.tight_layout()
+plt.savefig("../../member2/results/confusion_matrix.png", dpi=150)
+print("Saved: confusion_matrix.png")
+plt.show()           # prints using the shared print function
 
 print("\n" + "="*45)
 print("FEATURE IMPORTANCE")
