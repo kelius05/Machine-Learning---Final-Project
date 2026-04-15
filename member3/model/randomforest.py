@@ -16,7 +16,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-df = pd.read_csv("../../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")  # load the dataset
+df = pd.read_csv("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")  # load the dataset
 
 encoder = LabelEncoder()  # converts text columns to numbers
 categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC',
@@ -69,6 +69,7 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=target_encoder
 disp.plot(xticks_rotation=45)
 plt.title("Confusion Matrix – Test Set")
 plt.tight_layout()
+plt.savefig("../results/confustion_matrix.png", dpi=150)
 plt.show()
 
 #cross validation
@@ -89,6 +90,7 @@ plt.title("Random Forest Feature Importances")
 plt.bar(range(len(importances)), importances[indices], align="center")
 plt.xticks(range(len(importances)), [feature_names[i] for i in indices], rotation=90)
 plt.tight_layout()
+plt.savefig("../results/forest_feature_importance.png", dpi=150)
 plt.show()
 
 #Roc curve
@@ -109,6 +111,7 @@ plt.ylabel('True Positive Rate')
 plt.title('Multi-class ROC Curves (One-vs-Rest)')
 plt.legend(loc='lower right')
 plt.tight_layout()
+plt.savefig("../results/ROC_Curve.png", dpi=150)
 plt.show()
 
 pipeline = Pipeline([
