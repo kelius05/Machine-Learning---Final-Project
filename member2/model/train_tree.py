@@ -25,8 +25,23 @@ categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC',
 for col in categorical_cols:
     df[col] = encoder.fit_transform(df[col])  # replace each text column with numbers e.g. Female=0, Male=1
 
-target_encoder = LabelEncoder()  # separate encoder for the target so we can decode predictions back to names later
-df['NObeyesdad'] = target_encoder.fit_transform(df['NObeyesdad'])  # encode the 7 obesity categories to numbers 0-6
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+
+correct_order = [
+    'Insufficient_Weight',
+    'Normal_Weight', 
+    'Overweight_Level_I',
+    'Overweight_Level_II',
+    'Obesity_Type_I',
+    'Obesity_Type_II',
+    'Obesity_Type_III'
+]
+
+target_encoder = LabelEncoder()
+target_encoder.classes_ = np.array(correct_order)
+df['NObeyesdad'] = df['NObeyesdad'].map({v: i for i, v in enumerate(correct_order)})
+
 
 X = df.drop(columns=['NObeyesdad'])  # all input features except the one we want to predict
 y = df['NObeyesdad']                  # the target label we want to predict
