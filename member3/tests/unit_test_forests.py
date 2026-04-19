@@ -6,11 +6,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-
+#Recently added to check for correct get push X#5
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 def get_data_and_model():
-    df = pd.read_csv("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(script_dir, '..', '..', 'data', 'raw', 'ObesityDataSet_raw_and_data_sinthetic.csv')
+    df = pd.read_csv(data_path)
 
     encoder = LabelEncoder()
     categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC',
@@ -24,12 +26,12 @@ def get_data_and_model():
     X = df.drop(columns=['NObeyesdad'])
     y = df['NObeyesdad']
 
+# same split as randomforest.py
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y  # same split as randomforest.py
+        X, y, test_size=0.2, random_state=42, stratify=y  
     )
 
-    rf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-2)  # same settings as randomforest.py
-    rf.fit(X_train, y_train)
+    rf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-2) 
 
     return rf, X, X_train, X_test, y_train, y_test, target_encoder
 
@@ -62,23 +64,22 @@ def test_predictions_on_new_people():
     # model must return valid obesity category names for new people
     rf, X, X_train, X_test, y_train, y_test, target_encoder = get_data_and_model()
 
-    valid_categories = set(target_encoder.classes_)  # the 7 known obesity category names
+    valid_categories = set(target_encoder.classes_) 
 
     # every row is a new person with different values
     test_people = [
-        pd.DataFrame([[0, 20, 1.65, 55,  0, 0, 2, 3, 2, 0, 2, 0, 3, 1, 0, 3]], columns=X.columns),  # young, light, active
-        pd.DataFrame([[1, 35, 1.75, 95,  1, 1, 3, 3, 2, 0, 2, 0, 1, 1, 1, 0]], columns=X.columns),  # middle aged, overweight
-        pd.DataFrame([[1, 45, 1.70, 130, 1, 1, 3, 3, 3, 0, 1, 0, 0, 2, 2, 0]], columns=X.columns),  # sedentary, heavy
-        pd.DataFrame([[0, 28, 1.68, 62,  0, 0, 2, 3, 1, 0, 3, 1, 3, 0, 0, 3]], columns=X.columns),  # very active, normal weight
-        pd.DataFrame([[0, 40, 1.60, 110, 1, 1, 2, 3, 2, 0, 1, 0, 0, 1, 2, 1]], columns=X.columns),  # family history, high weight
+        pd.DataFrame([[0, 20, 1.65, 55,  0, 0, 2, 3, 2, 0, 2, 0, 3, 1, 0, 3]], columns=X.columns),  
+        pd.DataFrame([[1, 35, 1.75, 95,  1, 1, 3, 3, 2, 0, 2, 0, 1, 1, 1, 0]], columns=X.columns),  
+        pd.DataFrame([[1, 45, 1.70, 130, 1, 1, 3, 3, 3, 0, 1, 0, 0, 2, 2, 0]], columns=X.columns),  
+        pd.DataFrame([[0, 28, 1.68, 62,  0, 0, 2, 3, 1, 0, 3, 1, 3, 0, 0, 3]], columns=X.columns),  
+        pd.DataFrame([[0, 40, 1.60, 110, 1, 1, 2, 3, 2, 0, 1, 0, 0, 1, 2, 1]], columns=X.columns),  
     ]
 
     for i, person in enumerate(test_people):
-        prediction = rf.predict(person)  # get the predicted encoded number
-        category = target_encoder.inverse_transform(prediction)  # decode back to obesity category name
-
+        prediction = rf.predict(person)  
+        category = target_encoder.inverse_transform(prediction)  
         assert category[0] in valid_categories, (
-            f"Person {i+1} returned invalid category: {category[0]}"  # every prediction must be one of the 7 known categories
+            f"Person {i+1} returned invalid category: {category[0]}"  
         )
 
 if __name__ == "__main__":
