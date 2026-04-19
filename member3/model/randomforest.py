@@ -10,22 +10,30 @@ from sklearn.metrics import (
     classification_report, confusion_matrix, ConfusionMatrixDisplay,
     roc_curve, auc
 )
+#recently added to check for correct get push X#5
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-df = pd.read_csv("../../data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")  # load the dataset
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_path = os.path.join(script_dir, '..', '..', 'data', 'raw', 'ObesityDataSet_raw_and_data_sinthetic.csv')
+results_dir = os.path.join(script_dir, '..', '..', 'results')
+os.makedirs(results_dir, exist_ok=True)
+df = pd.read_csv(data_path)  
 
-encoder = LabelEncoder()  # converts text columns to numbers
+# converts text columns to numbers
+encoder = LabelEncoder()  
 categorical_cols = ['Gender', 'family_history_with_overweight', 'FAVC',
                     'CAEC', 'SMOKE', 'SCC', 'CALC', 'MTRANS']
 
+ # encode each text column
 for col in categorical_cols:
-    df[col] = encoder.fit_transform(df[col])  # encode each text column
+    df[col] = encoder.fit_transform(df[col]) 
 
-target_encoder = LabelEncoder()  # separate encoder for target so we can decode predictions later
+  # separate encoder for target so we can decode predictions later
+target_encoder = LabelEncoder()
 df['NObeyesdad'] = target_encoder.fit_transform(df['NObeyesdad'])
 
 X = df.drop(columns=['NObeyesdad'])
@@ -40,6 +48,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 #setup random forest(change later)
 rf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-2)
 rf.fit(X_train, y_train)
+
 # train accuracy (for diagnostic purposes)
 y_train_pred = rf.predict(X_train)
 train_accuracy = accuracy_score(y_train, y_train_pred)
@@ -69,7 +78,7 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=target_encoder
 disp.plot(xticks_rotation=45)
 plt.title("Confusion Matrix – Test Set")
 plt.tight_layout()
-plt.savefig("../results/confustion_matrix.png", dpi=150)
+plt.savefig(os.path.join(results_dir, "confusion_matrix.png"), dpi=150)
 plt.show()
 
 #cross validation
@@ -90,7 +99,7 @@ plt.title("Random Forest Feature Importances")
 plt.bar(range(len(importances)), importances[indices], align="center")
 plt.xticks(range(len(importances)), [feature_names[i] for i in indices], rotation=90)
 plt.tight_layout()
-plt.savefig("../results/forest_feature_importance.png", dpi=150)
+plt.savefig(os.path.join(results_dir, "forest_feature_importance.png"), dpi=150)
 plt.show()
 
 #Roc curve
@@ -111,7 +120,7 @@ plt.ylabel('True Positive Rate')
 plt.title('Multi-class ROC Curves (One-vs-Rest)')
 plt.legend(loc='lower right')
 plt.tight_layout()
-plt.savefig("../results/ROC_Curve.png", dpi=150)
+plt.savefig(os.path.join(results_dir, "ROC_Curve.png"), dpi=150)
 plt.show()
 
 pipeline = Pipeline([
