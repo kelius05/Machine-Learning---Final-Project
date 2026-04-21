@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import classification_report
 import numpy as np
 
-df = pd.read_csv("data/ObesityDataSet_raw_and_data_sinthetic.csv")
+df = pd.read_csv("data/raw/ObesityDataSet_raw_and_data_sinthetic.csv")
 X = df.drop(columns=["NObeyesdad"])
 y = df["NObeyesdad"]
 
